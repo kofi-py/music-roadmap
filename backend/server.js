@@ -18,6 +18,9 @@ const pool = new Pool({
   database: process.env.DB_NAME || 'music_roadmap',
   password: process.env.DB_PASSWORD || 'postgres',
   port: process.env.DB_PORT || 5432,
+  ssl: process.env.DB_HOST && process.env.DB_HOST.includes('neon.tech')
+    ? { rejectUnauthorized: false }
+    : false
 });
 
 // Test database connection
