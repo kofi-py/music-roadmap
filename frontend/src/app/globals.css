@@ -1,0 +1,160 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-warm-cream text-gray-900 antialiased;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+}
+
+@layer components {
+  /* Musical note decorations */
+  .music-note {
+    display: inline-block;
+    font-size: 3rem;
+    opacity: 0.1;
+    position: absolute;
+    animation: noteFloat 3s ease-in-out infinite;
+  }
+  
+  /* Staff lines background */
+  .staff-lines {
+    background-image: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2rem,
+      rgba(107, 33, 168, 0.05) 2rem,
+      rgba(107, 33, 168, 0.05) calc(2rem + 2px)
+    );
+  }
+  
+  /* Vinyl record effect */
+  .vinyl-record {
+    background: radial-gradient(circle, #1F2937 30%, #111827 100%);
+    border-radius: 50%;
+    position: relative;
+  }
+  
+  .vinyl-record::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 30%;
+    height: 30%;
+    background: #6B21A8;
+    border-radius: 50%;
+  }
+  
+  /* Music card with glow */
+  .music-card {
+    @apply bg-white rounded-2xl shadow-lg border-2 border-transparent transition-all duration-300;
+  }
+  
+  .music-card:hover {
+    @apply border-royal-purple-400 shadow-glow-purple transform -translate-y-1;
+  }
+  
+  /* Button styles */
+  .btn-primary {
+    @apply px-6 py-3 bg-gradient-to-r from-royal-purple-600 via-passion-pink-500 to-music-gold-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-glow-purple transition-all duration-300 transform hover:-translate-y-0.5;
+  }
+  
+  .btn-secondary {
+    @apply px-6 py-3 bg-white text-royal-purple-700 font-semibold rounded-xl border-2 border-royal-purple-400 hover:bg-royal-purple-50 transition-all duration-300;
+  }
+  
+  .btn-google {
+    @apply px-8 py-4 bg-white text-gray-700 font-semibold rounded-xl border-2 border-gray-300 hover:border-royal-purple-400 hover:shadow-lg transition-all duration-300 flex items-center gap-3;
+  }
+  
+  /* Progress bar */
+  .progress-bar {
+    @apply w-full h-3 bg-gray-200 rounded-full overflow-hidden;
+  }
+  
+  .progress-fill {
+    @apply h-full bg-gradient-to-r from-royal-purple-500 via-passion-pink-500 to-music-gold-500 transition-all duration-500;
+  }
+  
+  /* Level badges */
+  .level-badge {
+    @apply inline-block px-4 py-2 rounded-full text-sm font-bold text-white;
+  }
+  
+  .level-badge-elementary {
+    @apply bg-gradient-to-r from-music-gold-400 to-music-gold-600;
+  }
+  
+  .level-badge-middle {
+    @apply bg-gradient-to-r from-passion-pink-400 to-passion-pink-600;
+  }
+  
+  .level-badge-high {
+    @apply bg-gradient-to-r from-royal-purple-400 to-royal-purple-600;
+  }
+  
+  .level-badge-college {
+    @apply bg-gradient-to-r from-melody-indigo-500 to-melody-indigo-700;
+  }
+}
+
+@layer utilities {
+  .text-gradient-music {
+    @apply bg-gradient-to-r from-royal-purple-600 via-passion-pink-500 to-music-gold-500 bg-clip-text text-transparent;
+  }
+  
+  .text-shadow-glow {
+    text-shadow: 0 0 20px currentColor;
+  }
+}
+
+/* Page transitions */
+.page-transition {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes noteFloat {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-20px) rotate(5deg);
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gradient-to-b from-royal-purple-500 to-passion-pink-500 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gradient-to-b from-royal-purple-600 to-passion-pink-600;
+}
