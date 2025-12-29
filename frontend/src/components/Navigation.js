@@ -33,6 +33,7 @@ export default function Navigation() {
     { href: '/curriculum', label: 'Courses', icon: '🎵' },
     { href: '/diagnostic', label: 'Diagnostic', icon: '🎯' },
     { href: '/forum', label: 'Forum', icon: '💬' },
+    { href: '/contact', label: 'Contact', icon: '📧' },
   ];
 
   return (
@@ -53,11 +54,10 @@ export default function Navigation() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-all ${
-                  pathname === link.href
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-all ${pathname === link.href
                     ? 'bg-royal-purple-100 text-royal-purple-700 shadow-sm'
                     : 'text-gray-700 hover:bg-gray-100'
-                }`}
+                  }`}
               >
                 <span className="text-lg">{link.icon}</span>
                 <span className="hidden sm:inline">{link.label}</span>
@@ -69,8 +69,8 @@ export default function Navigation() {
                 {user ? (
                   <div className="flex items-center gap-3">
                     {user.profilePicture && (
-                      <img 
-                        src={user.profilePicture} 
+                      <img
+                        src={user.profilePicture}
                         alt={user.username}
                         className="w-8 h-8 rounded-full border-2 border-royal-purple-400"
                       />

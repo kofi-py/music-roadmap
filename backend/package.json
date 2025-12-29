@@ -8,18 +8,25 @@
     "dev": "nodemon server.js",
     "init-db": "psql -U postgres -d music_roadmap -f schema.sql"
   },
-  "keywords": ["music", "education", "api", "google-oauth", "cookies"],
+  "keywords": [
+    "music",
+    "education",
+    "api",
+    "google-oauth",
+    "cookies"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.18.2",
-    "cors": "^2.8.5",
-    "pg": "^8.11.3",
-    "dotenv": "^16.3.1",
     "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
     "express-session": "^1.17.3",
+    "nodemailer": "^7.0.12",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
+    "pg": "^8.11.3",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
