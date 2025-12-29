@@ -26,6 +26,17 @@ if git commit -m "$commit_message"; then
     echo ""
     echo "Last 5 commits:"
     git log -n 5 --oneline --graph --decorate
+    
+    echo ""
+    echo "--- Pushing to GitHub ---"
+    if git push origin main; then
+        echo ""
+        echo "✓ Successfully pushed to GitHub!"
+    else
+        echo ""
+        echo "✗ Push failed. You may need to pull first or check your connection."
+        exit 1
+    fi
 else
     echo "Commit failed."
     exit 1
