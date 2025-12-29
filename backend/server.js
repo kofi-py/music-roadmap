@@ -34,30 +34,50 @@ pool.query('SELECT NOW()', (err, res) => {
 });
 
 // Middleware
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "https://music-roadmap.vercel.app"
+];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true); // allows Postman & OAuth
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true
 }));
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
+// ==================== AUTH ROUTES (NO CORS) ====================
 
-// Session configuration
-app.use(session({
-  name: 'music_roadmap_session',
-  secret: process.env.SESSION_SECRET || 'music-is-life-change-this-in-production',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: true,
-    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-    sameSite: 'lax'
+app.get('/auth/google',
+  passport.authenticate('google', { scope: ['profile', 'email'] })
+);
+
+app.get('/auth/google/callback',
+  passport.authenticate('google', { failureRedirect: '/login' }),
+  (req, res) => {
+    res.cookie('user_info', JSON.stringify({
+      id: req.user.id,
+      username: req.user.username,
+      email: req.user.email,
+      profilePicture: req.user.profile_picture
+    }), {
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      httpOnly: false,
+      secure: true,
+      sameSite: 'none'
+    });
+
+    res.redirect("http://localhost:3001");
   }
-}));
+);
+
+
 
 // Passport initialization
 app.use(passport.initialize());
