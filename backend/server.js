@@ -35,7 +35,7 @@ pool.query('SELECT NOW()', (err, res) => {
 
 // Middleware
 const allowedOrigins = [
-  "http://localhost:3000",
+  "http://localhost:3001",
   "http://localhost:5173",
   "https://music-roadmap.vercel.app"
 ];
