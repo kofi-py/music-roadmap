@@ -4,6 +4,7 @@ const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const MicrosoftStrategy = require('passport-microsoft').Strategy;
 const { Pool } = require('pg');
 const nodemailer = require('nodemailer');
 require('dotenv').config();
@@ -111,6 +112,72 @@ passport.use(new GoogleStrategy({
   }
 ));
 
+// ==================== MICROSOFT OAUTH SETUP ====================
+
+passport.use(new MicrosoftStrategy({
+  clientID: process.env.MICROSOFT_CLIENT_ID,
+  clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
+  callbackURL: process.env.MICROSOFT_CALLBACK_URL || 'http://localhost:5000/auth/microsoft/callback',
+  scope: ['user.read']
+},
+  async (accessToken, refreshToken, profile, done) => {
+    try {
+      // Check if user exists by Microsoft ID
+      let userResult = await pool.query(
+        'SELECT * FROM users WHERE microsoft_id = $1',
+        [profile.id]
+      );
+
+      let user;
+      if (userResult.rows.length === 0) {
+        // Check if email already exists (user might have signed up with Google)
+        const emailCheck = await pool.query(
+          'SELECT * FROM users WHERE email = $1',
+          [profile.emails[0].value]
+        );
+
+        if (emailCheck.rows.length > 0) {
+          // Link Microsoft account to existing user
+          user = await pool.query(
+            'UPDATE users SET microsoft_id = $1, last_login = NOW() WHERE email = $2 RETURNING *',
+            [profile.id, profile.emails[0].value]
+          );
+          user = user.rows[0];
+          console.log('Linked Microsoft account to existing user:', user.email);
+        } else {
+          // Create new user
+          const newUserResult = await pool.query(
+            `INSERT INTO users (microsoft_id, email, username, profile_picture, last_login)
+             VALUES ($1, $2, $3, $4, NOW())
+             RETURNING *`,
+            [
+              profile.id,
+              profile.emails[0].value,
+              profile.displayName || 'Music Enthusiast',
+              null // Microsoft doesn't provide profile picture in basic scope
+            ]
+          );
+          user = newUserResult.rows[0];
+          console.log('Created new user via Microsoft:', user.email);
+        }
+      } else {
+        // Update last login
+        user = userResult.rows[0];
+        await pool.query(
+          'UPDATE users SET last_login = NOW() WHERE id = $1',
+          [user.id]
+        );
+        console.log('User logged in via Microsoft:', user.email);
+      }
+
+      return done(null, user);
+    } catch (error) {
+      console.error('Microsoft OAuth error:', error);
+      return done(error, null);
+    }
+  }
+));
+
 // Serialize user for session
 passport.serializeUser((user, done) => {
   done(null, user.id);
@@ -145,6 +212,32 @@ app.get('/auth/google',
 // Google OAuth callback
 app.get('/auth/google/callback',
   passport.authenticate('google', { failureRedirect: '/login' }),
+  (req, res) => {
+    // Set user info cookie (non-httpOnly for frontend access)
+    res.cookie('user_info', JSON.stringify({
+      id: req.user.id,
+      username: req.user.username,
+      email: req.user.email,
+      profilePicture: req.user.profile_picture
+    }), {
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      httpOnly: false,
+      sameSite: 'lax'
+    });
+
+    // Redirect to frontend
+    res.redirect(process.env.FRONTEND_URL || 'http://localhost:3000');
+  }
+);
+
+// Initiate Microsoft OAuth
+app.get('/auth/microsoft',
+  passport.authenticate('microsoft', { scope: ['user.read'] })
+);
+
+// Microsoft OAuth callback
+app.get('/auth/microsoft/callback',
+  passport.authenticate('microsoft', { failureRedirect: '/login' }),
   (req, res) => {
     // Set user info cookie (non-httpOnly for frontend access)
     res.cookie('user_info', JSON.stringify({
