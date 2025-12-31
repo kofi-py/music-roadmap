@@ -100,7 +100,6 @@ passport.use(new LocalStrategy({
     passwordField: 'password'
   },
   async (identifier, password, done) => {
-    console.log(`🔍 [DIAGNOSTIC] Login attempt for: ${identifier}`);
     try {
       // Check for both email or username
       const result = await pool.query(
@@ -135,7 +134,6 @@ passport.use(new LocalStrategy({
 // Signup
 app.post('/auth/signup', async (req, res) => {
   const { email, username, password } = req.body;
-  console.log(`🔍 [DIAGNOSTIC] Signup attempt for email: ${email}, username: ${username}`);
   if (!email || !username || !password) {
     return res.status(400).json({ error: 'All fields are required.' });
   }
