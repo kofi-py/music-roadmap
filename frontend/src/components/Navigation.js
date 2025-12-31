@@ -76,38 +76,45 @@ export default function Navigation() {
             {mounted && (
               <div className="ml-4 pl-4 border-l-2 border-gray-300">
                 {user ? (
-                  <div className="flex items-center gap-3">
-                    {user.profilePicture && (
-                      <img
-                        src={user.profilePicture}
-                        alt={user.username}
-                        className="w-8 h-8 rounded-full border-2 border-royal-purple-400"
-                      />
-                    )}
-                    <div className="hidden md:block text-right">
-                      <div className="text-sm font-semibold text-royal-purple-900">
-                        {user.username}
+                  <div className="flex items-center gap-4">
+                    <div className="flex flex-col items-end">
+                      <span className="text-xs font-semibold text-gray-400 uppercase tracking-tighter leading-none mb-1">Logged in as</span>
+                      <div className="flex items-center gap-2">
+                        {user.profile_picture ? (
+                          <img
+                            src={user.profile_picture}
+                            alt={user.username}
+                            className="w-8 h-8 rounded-full border-2 border-royal-purple-400 shadow-sm"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-royal-purple-100 flex items-center justify-center text-sm border-2 border-royal-purple-200">
+                            👤
+                          </div>
+                        )}
+                        <span className="text-sm font-bold text-royal-purple-900">
+                          {user.username}
+                        </span>
                       </div>
-                      <div className="text-xs text-gray-500">{user.email}</div>
                     </div>
                     <button
                       onClick={handleLogout}
-                      className="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium"
+                      className="ml-2 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                      title="Logout"
                     >
-                      Logout
+                      <span className="text-xl">🚪</span>
                     </button>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 relative z-50">
                     <Link
                       href="/login"
-                      className="px-4 py-2 text-royal-purple-600 hover:bg-royal-purple-50 rounded-lg transition-all font-medium"
+                      className="px-5 py-2.5 text-royal-purple-600 hover:bg-royal-purple-50 rounded-xl transition-all font-bold cursor-pointer border-2 border-transparent hover:border-royal-purple-200 active:scale-95"
                     >
                       Sign In
                     </Link>
                     <Link
                       href="/signup"
-                      className="px-4 py-2 bg-gradient-music text-white rounded-lg hover:shadow-glow-purple transition-all font-medium"
+                      className="px-5 py-2.5 bg-gradient-music text-white rounded-xl hover:shadow-glow-purple transition-all font-bold cursor-pointer active:scale-95"
                     >
                       Sign Up
                     </Link>

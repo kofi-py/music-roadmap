@@ -96,22 +96,32 @@ passport.deserializeUser(async (id, done) => {
 
 // Local Strategy
 passport.use(new LocalStrategy({
-    usernameField: 'email',
+    usernameField: 'identifier',
     passwordField: 'password'
   },
-  async (email, password, done) => {
+  async (identifier, password, done) => {
+    console.log(`🔍 [DIAGNOSTIC] Login attempt for: ${identifier}`);
     try {
-      const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+      // Check for both email or username
+      const result = await pool.query(
+        'SELECT * FROM users WHERE email = $1 OR username = $2', 
+        [identifier, identifier]
+      );
+      
       if (result.rows.length === 0) {
-        return done(null, false, { message: 'Incorrect email or password.' });
+        return done(null, false, { message: 'Incorrect username/email or password.' });
       }
+      
       const user = result.rows[0];
       if (!user.password_hash) {
-        return done(null, false, { message: 'Use Google or Microsoft login for this account.' });
+        return done(null, false, { 
+          message: 'Account exists but lacks a password (former Social account). Please Sign Up with this email/username to set a password.' 
+        });
       }
+      
       const isMatch = await bcrypt.compare(password, user.password_hash);
       if (!isMatch) {
-        return done(null, false, { message: 'Incorrect email or password.' });
+        return done(null, false, { message: 'Incorrect username/email or password.' });
       }
       return done(null, user);
     } catch (err) {
@@ -125,13 +135,35 @@ passport.use(new LocalStrategy({
 // Signup
 app.post('/auth/signup', async (req, res) => {
   const { email, username, password } = req.body;
+  console.log(`🔍 [DIAGNOSTIC] Signup attempt for email: ${email}, username: ${username}`);
   if (!email || !username || !password) {
     return res.status(400).json({ error: 'All fields are required.' });
   }
 
   try {
     const checkEmail = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    
     if (checkEmail.rows.length > 0) {
+      const existingUser = checkEmail.rows[0];
+      
+      // If the user exists but has no password (former social login), allow them to "signup" by setting one
+      if (!existingUser.password_hash) {
+        const salt = await bcrypt.genSalt(10);
+        const passwordHash = await bcrypt.hash(password, salt);
+        
+        const updated = await pool.query(
+          'UPDATE users SET password_hash = $1, username = $2 WHERE id = $3 RETURNING id, email, username',
+          [passwordHash, username, existingUser.id]
+        );
+        
+        const user = updated.rows[0];
+        return req.login(user, (err) => {
+          if (err) return res.status(500).json({ error: 'Error logging in after conversion.' });
+          setUserInfoCookie(res, user);
+          return res.json({ success: true, user, message: 'Account converted to password login.' });
+        });
+      }
+      
       return res.status(400).json({ error: 'Email already exists.' });
     }
 

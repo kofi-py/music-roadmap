@@ -25,7 +25,7 @@ export default function ForumPage() {
                 forumAPI.getPosts('all')
             ]);
             setCategories(categoriesData);
-            setPosts(postsData.posts);
+            setPosts(Array.isArray(postsData) ? postsData : []);
         } catch (error) {
             console.error('Error fetching forum data:', error);
         } finally {
@@ -38,7 +38,7 @@ export default function ForumPage() {
         setLoading(true);
         try {
             const postsData = await forumAPI.getPosts(categoryName);
-            setPosts(postsData.posts);
+            setPosts(Array.isArray(postsData) ? postsData : []);
         } catch (error) {
             console.error('Error fetching posts by category:', error);
         } finally {
@@ -46,9 +46,9 @@ export default function ForumPage() {
         }
     };
 
-    const filteredPosts = posts.filter(post =>
-        post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.content.toLowerCase().includes(searchQuery.toLowerCase())
+    const filteredPosts = (posts || []).filter(post =>
+        post.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        post.content?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     return (

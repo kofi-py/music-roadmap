@@ -11,18 +11,7 @@ export default function HomePage() {
 
   useEffect(() => {
     setMounted(true);
-    const checkAuth = async () => {
-      try {
-        const data = await authAPI.getCurrentUser();
-        if (!data.authenticated) {
-          router.push('/login');
-        }
-      } catch (err) {
-        console.error('Landing page auth check failed');
-      }
-    };
-    checkAuth();
-  }, [router]);
+  }, []);
 
   return (
     <div className="bg-warm-cream staff-lines">

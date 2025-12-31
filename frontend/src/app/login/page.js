@@ -7,7 +7,7 @@ import { authAPI } from '../../lib/api';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [formData, setFormData] = useState({ identifier: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -24,6 +24,7 @@ export default function LoginPage() {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(formData)
       });
 
@@ -56,15 +57,15 @@ export default function LoginPage() {
           {/* Traditional Login Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-bold text-royal-purple-900 mb-1">Email</label>
+              <label className="block text-sm font-bold text-royal-purple-900 mb-1">Username or Email</label>
               <input
-                type="email"
-                name="email"
+                type="text"
+                name="identifier"
                 required
-                value={formData.email}
+                value={formData.identifier}
                 onChange={handleChange}
                 className="w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:border-royal-purple-500 outline-none transition-all"
-                placeholder="kofi@example.com"
+                placeholder="kofi or kofi@example.com"
               />
             </div>
 
@@ -93,9 +94,6 @@ export default function LoginPage() {
               className="btn-primary w-full py-4 disabled:opacity-50"
             >
               {loading ? 'Logging in...' : 'Sign In 🎹'}
-            </button>
-          </form>
-
             </button>
           </form>
 
