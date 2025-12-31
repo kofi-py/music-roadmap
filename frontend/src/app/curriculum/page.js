@@ -40,11 +40,16 @@ export default function CurriculumPage() {
                   Want to save your progress?
                 </div>
                 <p className="text-gray-700 mb-3">
-                  Sign in with Google to track completed courses and get personalized recommendations.
+                  Sign in to track completed courses and get personalized recommendations.
                 </p>
-                <Link href="/login" className="btn-primary inline-block">
-                  Sign in with Google
-                </Link>
+                <div className="flex gap-3">
+                  <Link href="/login" className="btn-primary inline-block">
+                    Sign In
+                  </Link>
+                  <Link href="/signup" className="btn-secondary inline-block">
+                    Create Account
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
