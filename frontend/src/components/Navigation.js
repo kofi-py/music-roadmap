@@ -89,12 +89,20 @@ export default function Navigation() {
                     </button>
                   </div>
                 ) : (
-                  <Link
-                    href="/login"
-                    className="px-4 py-2 bg-gradient-music text-white rounded-lg hover:shadow-glow-purple transition-all font-medium"
-                  >
-                    Sign In
-                  </Link>
+                  <div className="flex items-center gap-3">
+                    <Link
+                      href="/login"
+                      className="px-4 py-2 text-royal-purple-600 hover:bg-royal-purple-50 rounded-lg transition-all font-medium"
+                    >
+                      Sign In
+                    </Link>
+                    <Link
+                      href="/signup"
+                      className="px-4 py-2 bg-gradient-music text-white rounded-lg hover:shadow-glow-purple transition-all font-medium"
+                    >
+                      Sign Up
+                    </Link>
+                  </div>
                 )}
               </div>
             )}

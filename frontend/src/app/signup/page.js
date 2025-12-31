@@ -3,21 +3,17 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { authAPI } from '../../lib/api';
 
-export default function LoginPage() {
+export default function SignupPage() {
   const router = useRouter();
-  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [formData, setFormData] = useState({
+    username: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
+  });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const handleGoogleLogin = () => {
-    authAPI.loginWithGoogle();
-  };
-
-  const handleMicrosoftLogin = () => {
-    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/auth/microsoft`;
-  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -26,24 +22,40 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/auth/login`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          email: formData.email,
+          username: formData.username,
+          password: formData.password
+        })
       });
 
       const data = await response.json();
 
       if (response.ok) {
+        // Success - server should have set session cookie
         router.push('/curriculum');
       } else {
-        setError(data.error || 'Login failed. Please check your credentials.');
+        setError(data.error || 'Signup failed. Please try again.');
       }
     } catch (err) {
-      setError('Connection failed. Please try again later.');
+      setError('Connection to server failed. Please try again later.');
     } finally {
       setLoading(false);
     }
@@ -56,13 +68,25 @@ export default function LoginPage() {
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-white shadow-glow-gold mb-4">
             <span className="text-4xl">🎵</span>
           </div>
-          <h1 className="text-4xl font-display font-bold text-white mb-2">Welcome Back</h1>
-          <p className="text-white/90">Sign in to your Music Roadmap</p>
+          <h1 className="text-4xl font-display font-bold text-white mb-2">Create Account</h1>
+          <p className="text-white/90">Join the Music Roadmap community</p>
         </div>
 
         <div className="music-card p-8 bg-white space-y-6">
-          {/* Traditional Login Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-bold text-royal-purple-900 mb-1">Username</label>
+              <input
+                type="text"
+                name="username"
+                required
+                value={formData.username}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:border-royal-purple-500 outline-none transition-all"
+                placeholder="MusicLover123"
+              />
+            </div>
+
             <div>
               <label className="block text-sm font-bold text-royal-purple-900 mb-1">Email</label>
               <input
@@ -89,6 +113,19 @@ export default function LoginPage() {
               />
             </div>
 
+            <div>
+              <label className="block text-sm font-bold text-royal-purple-900 mb-1">Confirm Password</label>
+              <input
+                type="password"
+                name="confirmPassword"
+                required
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:border-royal-purple-500 outline-none transition-all"
+                placeholder="••••••••"
+              />
+            </div>
+
             {error && (
               <div className="p-3 bg-red-50 border-2 border-red-100 text-red-600 rounded-xl text-sm font-medium">
                 {error}
@@ -100,7 +137,7 @@ export default function LoginPage() {
               disabled={loading}
               className="btn-primary w-full py-4 disabled:opacity-50"
             >
-              {loading ? 'Logging in...' : 'Sign In 🎹'}
+              {loading ? 'Creating Account...' : 'Sign Up ✨'}
             </button>
           </form>
 
@@ -109,44 +146,13 @@ export default function LoginPage() {
               <div className="w-full border-t border-gray-100"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-400 font-medium">or continue with</span>
+              <span className="px-2 bg-white text-gray-400 font-medium">Already have an account?</span>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            {/* Google Login */}
-            <button 
-              onClick={handleGoogleLogin} 
-              className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-gray-100 rounded-xl hover:border-royal-purple-200 transition-all font-bold text-sm text-gray-700"
-            >
-              <img src="https://www.google.com/favicon.ico" alt="Google" className="w-4 h-4" />
-              Google
-            </button>
-
-            {/* Microsoft Login */}
-            <button 
-              onClick={handleMicrosoftLogin} 
-              className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-gray-100 rounded-xl hover:border-royal-purple-200 transition-all font-bold text-sm text-gray-700"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 23 23">
-                <path d="M0 0h10.931v10.931H0z" fill="#F25022"/>
-                <path d="M12.069 0H23v10.931H12.069z" fill="#7FBA00"/>
-                <path d="M0 12.069h10.931V23H0z" fill="#00A4EF"/>
-                <path d="M12.069 12.069H23V23H12.069z" fill="#FFB900"/>
-              </svg>
-              Microsoft
-            </button>
-          </div>
-
-          <div className="pt-4 text-center space-y-3">
-            <p className="text-gray-500 text-sm">
-              New here? {' '}
-              <Link href="/signup" className="text-royal-purple-600 font-bold hover:underline">
-                Create an account
-              </Link>
-            </p>
-            <Link href="/curriculum" className="block text-gray-400 font-semibold text-xs hover:text-royal-purple-400 transition-colors">
-              Browse as Guest →
+          <div className="text-center">
+            <Link href="/login" className="text-royal-purple-600 font-bold hover:underline">
+              Log In Instead
             </Link>
           </div>
         </div>
