@@ -1,15 +1,15 @@
 -- Music Roadmap Database Schema
 
 -- Users table (with Google OAuth support)
-CREATE TABLE IF NOT EXISTS users (
-    id SERIAL PRIMARY KEY,
-    google_id VARCHAR(255) UNIQUE,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    username VARCHAR(255) NOT NULL,
-    profile_picture TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_login TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE users (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  username TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
 );
+
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- Forum categories
 CREATE TABLE IF NOT EXISTS categories (

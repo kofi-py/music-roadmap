@@ -3,6 +3,8 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const passport = require('passport');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const MicrosoftStrategy = require('passport-microsoft').Strategy;
 const { Pool } = require('pg');
@@ -74,123 +76,80 @@ passport.deserializeUser(async (id, done) => {
   }
 });
 
-/* ==================== GOOGLE OAUTH ==================== */
-
-passport.use(new GoogleStrategy({
-  clientID: process.env.GOOGLE_CLIENT_ID,
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: process.env.GOOGLE_CALLBACK_URL
-}, async (_, __, profile, done) => {
-  try {
-    let result = await pool.query(
-      'SELECT * FROM users WHERE google_id = $1',
-      [profile.id]
-    );
-
-    let user;
-    if (!result.rows.length) {
-      user = (await pool.query(
-        `INSERT INTO users (google_id, email, username, profile_picture, last_login)
-         VALUES ($1,$2,$3,$4,NOW()) RETURNING *`,
-        [
-          profile.id,
-          profile.emails[0].value,
-          profile.displayName,
-          profile.photos[0]?.value
-        ]
-      )).rows[0];
-    } else {
-      user = result.rows[0];
-      await pool.query(
-        'UPDATE users SET last_login = NOW() WHERE id = $1',
-        [user.id]
-      );
-    }
-
-    done(null, user);
-  } catch (err) {
-    done(err);
-  }
-}));
-
-/* ==================== MICROSOFT OAUTH ==================== */
-
-passport.use(new MicrosoftStrategy({
-  clientID: process.env.MICROSOFT_CLIENT_ID,
-  clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
-  callbackURL: process.env.MICROSOFT_CALLBACK_URL,
-  scope: ['user.read']
-}, async (_, __, profile, done) => {
-  try {
-    let result = await pool.query(
-      'SELECT * FROM users WHERE microsoft_id = $1',
-      [profile.id]
-    );
-
-    let user;
-    if (!result.rows.length) {
-      user = (await pool.query(
-        `INSERT INTO users (microsoft_id, email, username, last_login)
-         VALUES ($1,$2,$3,NOW()) RETURNING *`,
-        [profile.id, profile.emails[0].value, profile.displayName]
-      )).rows[0];
-    } else {
-      user = result.rows[0];
-      await pool.query(
-        'UPDATE users SET last_login = NOW() WHERE id = $1',
-        [user.id]
-      );
-    }
-
-    done(null, user);
-  } catch (err) {
-    done(err);
-  }
-}));
-
 /* ==================== AUTH ROUTES ==================== */
 
-app.get('/auth/google',
-  passport.authenticate('google', { scope: ['profile', 'email'] })
-);
+/* SIGN UP */
+app.post('/auth/signup', async (req, res) => {
+  const { email, username, password } = req.body;
+  if (!email || !username || !password)
+    return res.status(400).json({ error: 'Missing fields' });
 
-app.get(
-  '/auth/google/callback',
-  passport.authenticate('google', {
-    failureRedirect: '/login',
-    session: true
-  }),
-  (req, res) => {
-    res.redirect(process.env.FRONTEND_URL || 'http://localhost:3001');
-  }
-);
+  const passwordHash = await bcrypt.hash(password, 12);
 
-app.get('/auth/microsoft',
-  passport.authenticate('microsoft')
-);
+  try {
+    const result = await pool.query(
+      `INSERT INTO users (email, username, password_hash)
+       VALUES ($1,$2,$3) RETURNING id,email,username`,
+      [email, username, passwordHash]
+    );
 
-app.get(
-  '/auth/microsoft/callback',
-  passport.authenticate('microsoft', { failureRedirect: '/login' }),
-  (req, res) => {
-    res.redirect(process.env.FRONTEND_URL || 'http://localhost:3001');
-  }
-);
+    const token = createToken(result.rows[0]);
 
-app.post('/auth/logout', (req, res) => {
-  req.logout(() => {
-    req.session.destroy(() => {
-      res.clearCookie('music_roadmap_session');
-      res.json({ success: true });
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      maxAge: 7 * 24 * 60 * 60 * 1000
     });
+
+    res.json({ success: true, user: result.rows[0] });
+  } catch {
+    res.status(409).json({ error: 'User already exists' });
+  }
+});
+
+/* LOGIN */
+app.post('/auth/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  const result = await pool.query(
+    'SELECT * FROM users WHERE email=$1',
+    [email]
+  );
+
+  if (!result.rows.length)
+    return res.status(401).json({ error: 'Invalid credentials' });
+
+  const user = result.rows[0];
+  const match = await bcrypt.compare(password, user.password_hash);
+
+  if (!match)
+    return res.status(401).json({ error: 'Invalid credentials' });
+
+  const token = createToken(user);
+
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none',
+    maxAge: 7 * 24 * 60 * 60 * 1000
+  });
+
+  res.json({
+    success: true,
+    user: { id: user.id, email: user.email, username: user.username }
   });
 });
 
-app.get('/auth/me', (req, res) => {
-  res.json({
-    authenticated: !!req.user,
-    user: req.user || null
-  });
+/* LOGOUT */
+app.post('/auth/logout', (req, res) => {
+  res.clearCookie('token');
+  res.json({ success: true });
+});
+
+/* CURRENT USER */
+app.get('/auth/me', authMiddleware, (req, res) => {
+  res.json({ authenticated: true, user: req.user });
 });
 
 /* ==================== HEALTH ==================== */

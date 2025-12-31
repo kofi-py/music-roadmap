@@ -29,20 +29,6 @@ export default function LoginPage() {
             <span>Continue with Google</span>
           </button>
 
-          {/* Microsoft Login */}
-          <button
-            onClick={handleMicrosoftLogin}
-            className="w-full px-8 py-4 bg-white text-gray-700 font-semibold rounded-xl border-2 border-gray-300 hover:border-royal-purple-400 hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-3"
-          >
-            <svg className="w-6 h-6" viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M0 0h10.931v10.931H0z" fill="#F25022" />
-              <path d="M12.069 0H23v10.931H12.069z" fill="#7FBA00" />
-              <path d="M0 12.069h10.931V23H0z" fill="#00A4EF" />
-              <path d="M12.069 12.069H23V23H12.069z" fill="#FFB900" />
-            </svg>
-            <span>Continue with Microsoft</span>
-          </button>
-
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-200"></div>
