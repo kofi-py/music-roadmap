@@ -12,11 +12,20 @@ export default function Navigation() {
 
   useEffect(() => {
     setMounted(true);
-    const userInfo = cookieUtils.getUserInfo();
-    if (userInfo) {
-      setUser(userInfo);
-    }
-  }, []);
+    const checkAuth = async () => {
+      try {
+        const data = await authAPI.getCurrentUser();
+        if (data.authenticated) {
+          setUser(data.user);
+        } else {
+          setUser(null);
+        }
+      } catch (err) {
+        console.error('Auth check error:', err);
+      }
+    };
+    checkAuth();
+  }, [pathname]);
 
   const handleLogout = async () => {
     try {

@@ -11,14 +11,6 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleGoogleLogin = () => {
-    authAPI.loginWithGoogle();
-  };
-
-  const handleMicrosoftLogin = () => {
-    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/auth/microsoft`;
-  };
-
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -104,39 +96,8 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-100"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-400 font-medium">or continue with</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            {/* Google Login */}
-            <button 
-              onClick={handleGoogleLogin} 
-              className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-gray-100 rounded-xl hover:border-royal-purple-200 transition-all font-bold text-sm text-gray-700"
-            >
-              <img src="https://www.google.com/favicon.ico" alt="Google" className="w-4 h-4" />
-              Google
             </button>
-
-            {/* Microsoft Login */}
-            <button 
-              onClick={handleMicrosoftLogin} 
-              className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-gray-100 rounded-xl hover:border-royal-purple-200 transition-all font-bold text-sm text-gray-700"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 23 23">
-                <path d="M0 0h10.931v10.931H0z" fill="#F25022"/>
-                <path d="M12.069 0H23v10.931H12.069z" fill="#7FBA00"/>
-                <path d="M0 12.069h10.931V23H0z" fill="#00A4EF"/>
-                <path d="M12.069 12.069H23V23H12.069z" fill="#FFB900"/>
-              </svg>
-              Microsoft
-            </button>
-          </div>
+          </form>
 
           <div className="pt-4 text-center space-y-3">
             <p className="text-gray-500 text-sm">

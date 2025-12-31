@@ -2,13 +2,27 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { authAPI } from '../lib/api';
 
 export default function HomePage() {
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    const checkAuth = async () => {
+      try {
+        const data = await authAPI.getCurrentUser();
+        if (!data.authenticated) {
+          router.push('/login');
+        }
+      } catch (err) {
+        console.error('Landing page auth check failed');
+      }
+    };
+    checkAuth();
+  }, [router]);
 
   return (
     <div className="bg-warm-cream staff-lines">
@@ -126,7 +140,7 @@ export default function HomePage() {
               <div className="absolute top-0 right-0 w-32 h-32 bg-royal-purple-100 rounded-full -mr-16 -mt-16 opacity-50"></div>
               <div className="relative z-10">
                 <div className="text-5xl mb-4">🎯</div>
-                <h3 className="text-2xl font-display font-bold text-royal-purple-900 mb-4">Sign in with Google</h3>
+                <h3 className="text-2xl font-display font-bold text-royal-purple-900 mb-4">Create an Account</h3>
                 <ul className="space-y-3 mb-6">
                   <li className="flex items-start gap-3">
                     <span className="text-passion-pink-500 mt-1">✓</span>
@@ -145,8 +159,8 @@ export default function HomePage() {
                     <span>Get personalized recommendations</span>
                   </li>
                 </ul>
-                <Link href="/login" className="btn-primary w-full text-center block">
-                  Sign in with Google
+                <Link href="/signup" className="btn-primary w-full text-center block">
+                  Create an Account
                 </Link>
               </div>
             </div>
@@ -243,7 +257,7 @@ export default function HomePage() {
               Browse All Courses
             </Link>
             <Link href="/login" className="btn-secondary text-lg px-8 py-4">
-              Sign in with Google
+              Sign In Now
             </Link>
           </div>
         </div>

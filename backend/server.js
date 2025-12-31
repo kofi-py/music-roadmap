@@ -4,8 +4,6 @@ const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
-const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const MicrosoftStrategy = require('passport-microsoft').Strategy;
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
@@ -13,6 +11,9 @@ require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Trust proxy for secure cookies on Render/proxies
+app.set('trust proxy', 1);
 
 /* ==================== DATABASE ==================== */
 
@@ -56,6 +57,22 @@ app.use(session({
 
 app.use(passport.initialize());
 app.use(passport.session());
+
+/* ==================== AUTH HELPERS ==================== */
+
+const setUserInfoCookie = (res, user) => {
+  res.cookie('user_info', JSON.stringify({
+    id: user.id,
+    username: user.username,
+    email: user.email,
+    profilePicture: user.profile_picture
+  }), {
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    httpOnly: false, // Must be accessible for client UI logic
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    secure: process.env.NODE_ENV === 'production'
+  });
+};
 
 /* ==================== PASSPORT CONFIG ==================== */
 
@@ -103,77 +120,6 @@ passport.use(new LocalStrategy({
   }
 ));
 
-// Google Strategy
-if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
-  passport.use(new GoogleStrategy({
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: process.env.GOOGLE_CALLBACK_URL || 'http://localhost:5000/auth/google/callback'
-    },
-    async (accessToken, refreshToken, profile, done) => {
-      try {
-        const email = profile.emails[0].value;
-        const googleId = profile.id;
-        
-        // Check if user exists
-        let result = await pool.query('SELECT * FROM users WHERE google_id = $1 OR email = $2', [googleId, email]);
-        
-        if (result.rows.length > 0) {
-          const user = result.rows[0];
-          if (!user.google_id) {
-            await pool.query('UPDATE users SET google_id = $1 WHERE id = $2', [googleId, user.id]);
-          }
-          return done(null, user);
-        } else {
-          // Create new user
-          const newUser = await pool.query(
-            'INSERT INTO users (email, username, google_id, profile_picture) VALUES ($1, $2, $3, $4) RETURNING *',
-            [email, profile.displayName, googleId, profile.photos[0]?.value]
-          );
-          return done(null, newUser.rows[0]);
-        }
-      } catch (err) {
-        return done(err);
-      }
-    }
-  ));
-}
-
-// Microsoft Strategy
-if (process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET) {
-  passport.use(new MicrosoftStrategy({
-      clientID: process.env.MICROSOFT_CLIENT_ID,
-      clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
-      callbackURL: process.env.MICROSOFT_CALLBACK_URL || 'http://localhost:5000/auth/microsoft/callback',
-      scope: ['user.read']
-    },
-    async (accessToken, refreshToken, profile, done) => {
-      try {
-        const email = profile.emails[0].value;
-        const microsoftId = profile.id;
-        
-        let result = await pool.query('SELECT * FROM users WHERE microsoft_id = $1 OR email = $2', [microsoftId, email]);
-        
-        if (result.rows.length > 0) {
-          const user = result.rows[0];
-          if (!user.microsoft_id) {
-            await pool.query('UPDATE users SET microsoft_id = $1 WHERE id = $2', [microsoftId, user.id]);
-          }
-          return done(null, user);
-        } else {
-          const newUser = await pool.query(
-            'INSERT INTO users (email, username, microsoft_id) VALUES ($1, $2, $3) RETURNING *',
-            [email, profile.displayName, microsoftId]
-          );
-          return done(null, newUser.rows[0]);
-        }
-      } catch (err) {
-        return done(err);
-      }
-    }
-  ));
-}
-
 /* ==================== AUTH ROUTES ==================== */
 
 // Signup
@@ -200,6 +146,7 @@ app.post('/auth/signup', async (req, res) => {
     const user = result.rows[0];
     req.login(user, (err) => {
       if (err) return res.status(500).json({ error: 'Error logging in after signup.' });
+      setUserInfoCookie(res, user);
       return res.json({ success: true, user });
     });
   } catch (err) {
@@ -216,66 +163,11 @@ app.post('/auth/login', (req, res, next) => {
     
     req.logIn(user, (err) => {
       if (err) return next(err);
-      
-      // Set user info cookie for frontend
-      res.cookie('user_info', JSON.stringify({
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        profilePicture: user.profile_picture
-      }), {
-        maxAge: 30 * 24 * 60 * 60 * 1000,
-        httpOnly: false,
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-        secure: process.env.NODE_ENV === 'production'
-      });
-      
+      setUserInfoCookie(res, user);
       return res.json({ success: true, user: { id: user.id, username: user.username, email: user.email } });
     });
   })(req, res, next);
 });
-
-// Google Link
-app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
-
-app.get('/auth/google/callback', 
-  passport.authenticate('google', { failureRedirect: (process.env.FRONTEND_URL || 'http://localhost:3000') + '/login?error=google_failed' }),
-  (req, res) => {
-    res.cookie('user_info', JSON.stringify({
-      id: req.user.id,
-      username: req.user.username,
-      email: req.user.email,
-      profilePicture: req.user.profile_picture
-    }), {
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-      httpOnly: false,
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      secure: process.env.NODE_ENV === 'production'
-    });
-    res.redirect(process.env.FRONTEND_URL || 'http://localhost:3000');
-  }
-);
-
-// Microsoft Link
-app.get('/auth/microsoft', passport.authenticate('microsoft', { scope: ['user.read'] }));
-
-app.get('/auth/microsoft/callback',
-  passport.authenticate('microsoft', { failureRedirect: (process.env.FRONTEND_URL || 'http://localhost:3000') + '/login?error=microsoft_failed' }),
-  (req, res) => {
-    res.cookie('user_info', JSON.stringify({
-      id: req.user.id,
-      username: req.user.username,
-      email: req.user.email,
-      profilePicture: req.user.profile_picture
-    }), {
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-      httpOnly: false,
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      secure: process.env.NODE_ENV === 'production'
-    });
-    res.redirect(process.env.FRONTEND_URL || 'http://localhost:3000');
-  }
-);
 
 // Me
 app.get('/auth/me', (req, res) => {
